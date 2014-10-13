@@ -1,16 +1,33 @@
-var WebSocketServer = require('ws').Server;
+var WebSocketServer = require('ws').Server,
+  wss;
 
-module.exports = function (app, name, done) {
+//the function that starts the application
+exports.start = function (options, done) {
 
-  var wss = new WebSocketServer({
-    port: 8080
+  var self = this;
+
+  wss = new WebSocketServer({
+    port: 8084
   });
 
   wss.on('connection', function (ws) {
     ws.on('message', function (message) {
-      app.rpc.runCall(message, function (result) {
-        ws.send(result);
-      });
+      console.log(message);
+
+      var command = JSON.parse(message);
+
+      if (command.method === 'toggleMining') {
+
+        self.toggleMining();
+
+        ws.send({
+          'result': true,
+          'id': command.id
+        });
+      }
+      // app.rpc.runCall(message, function (result) {
+      //   ws.send(result);
+      // });
     });
   });
 
@@ -19,6 +36,11 @@ module.exports = function (app, name, done) {
       this.clients[i].send(data);
   };
 
+  done();
+};
+
+exports.stop = function (done) {
+  wss.close();
   done();
 };
 
